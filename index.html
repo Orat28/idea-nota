@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Songless - YouTube Playlist Edition</title>
+  <title>En una nota - Adivina la Canción</title>
   <style>
     * {
       box-sizing: border-box;
@@ -37,7 +37,6 @@
       letter-spacing: -1px;
     }
 
-    /* Pantalla de Inicio / Carga de Playlist */
     .setup-card {
       background: #1e1e1e;
       padding: 24px;
@@ -50,31 +49,20 @@
       gap: 15px;
     }
 
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      text-align: left;
-    }
-
-    label {
-      font-size: 0.9rem;
-      color: #aaa;
-    }
-
-    input[type="text"] {
+    textarea {
       width: 100%;
-      height: 48px;
+      height: 120px;
       background: #282828;
       border: 1px solid #333;
       border-radius: 6px;
       color: #fff;
-      padding: 0 12px;
-      font-size: 0.95rem;
+      padding: 12px;
+      font-size: 0.9rem;
       outline: none;
+      resize: vertical;
     }
 
-    input[type="text"]:focus {
+    textarea:focus {
       border-color: #ff0000;
     }
 
@@ -94,7 +82,6 @@
       background-color: #cc0000;
     }
 
-    /* Zona del Juego */
     .game-area {
       width: 100%;
       display: none;
@@ -208,13 +195,15 @@
       display: flex;
       gap: 10px;
       width: 100%;
+      position: relative;
     }
 
-    .select-wrapper {
+    .input-wrapper {
+      position: relative;
       flex: 1;
     }
 
-    select {
+    input[type="text"] {
       width: 100%;
       height: 48px;
       background: #282828;
@@ -226,6 +215,31 @@
       outline: none;
     }
 
+    .suggestions-list {
+      position: absolute;
+      bottom: 52px;
+      left: 0;
+      right: 0;
+      background: #282828;
+      border: 1px solid #444;
+      border-radius: 6px;
+      max-height: 180px;
+      overflow-y: auto;
+      display: none;
+      z-index: 10;
+    }
+
+    .suggestion-item {
+      padding: 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #333;
+      font-size: 0.9rem;
+    }
+
+    .suggestion-item:hover {
+      background: #383838;
+    }
+
     .btn-skip {
       height: 48px;
       padding: 0 24px;
@@ -235,10 +249,6 @@
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
-    }
-
-    .btn-skip:hover {
-      background: #e0e0e0;
     }
 
     .next-btn {
@@ -254,7 +264,6 @@
       display: none;
     }
 
-    /* Reproductor oculto de YouTube */
     #ytPlayerContainer {
       position: absolute;
       top: -9999px;
@@ -262,29 +271,23 @@
       width: 1px;
       height: 1px;
       opacity: 0;
-      pointer-events: none;
     }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>Songless</h1>
+    <h1>En una nota</h1>
 
-    <!-- Formulario de Inicio -->
     <div class="setup-card" id="setupCard">
-      <h2>Playlist de YouTube</h2>
-      <p style="color: #aaa; font-size: 0.9rem;">Ingresa el enlace o ID de una playlist pública de YouTube o YouTube Music.</p>
+      <h2>Ingresa tus Canciones</h2>
+      <p style="color: #aaa; font-size: 0.85rem;">Pega enlaces directos de YouTube (uno por línea):</p>
       
-      <div class="input-group">
-        <label for="playlistUrl">URL o ID de la Playlist:</label>
-        <input type="text" id="playlistUrl" placeholder="https://www.youtube.com/playlist?list=PL..." />
-      </div>
+      <textarea id="linksInput" placeholder="https://www.youtube.com/watch?v=...&#10;https://youtu.be/..."></textarea>
 
-      <button class="btn-start" id="startBtn">Cargar Juego</button>
+      <button class="btn-start" id="startBtn">Iniciar Juego</button>
     </div>
 
-    <!-- Área Principal de Juego -->
     <div class="game-area" id="gameArea">
       <div class="guesses-container" id="guessesContainer">
         <div class="guess-box"></div>
@@ -305,10 +308,9 @@
       </div>
 
       <div class="search-row" id="inputRow">
-        <div class="select-wrapper">
-          <select id="songSelect">
-            <option value="">Selecciona una canción...</option>
-          </select>
+        <div class="input-wrapper">
+          <input type="text" id="searchInput" placeholder="Escribe el nombre de la canción..." autocomplete="off" />
+          <div class="suggestions-list" id="suggestionsList"></div>
         </div>
         <button class="btn-skip" id="skipBtn">Skip</button>
       </div>
@@ -317,12 +319,10 @@
     </div>
   </div>
 
-  <!-- Contenedor iframe de YouTube oculto -->
   <div id="ytPlayerContainer">
     <div id="player"></div>
   </div>
 
-  <!-- API de IFrame de YouTube -->
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <script>
@@ -338,9 +338,10 @@
 
     const setupCard = document.getElementById('setupCard');
     const gameArea = document.getElementById('gameArea');
-    const playlistInput = document.getElementById('playlistUrl');
+    const linksInput = document.getElementById('linksInput');
     const startBtn = document.getElementById('startBtn');
-    const songSelect = document.getElementById('songSelect');
+    const searchInput = document.getElementById('searchInput');
+    const suggestionsList = document.getElementById('suggestionsList');
     const playBtn = document.getElementById('playBtn');
     const skipBtn = document.getElementById('skipBtn');
     const nextBtn = document.getElementById('nextBtn');
@@ -349,79 +350,46 @@
     const timeLabel = document.getElementById('timeLabel');
     const inputRow = document.getElementById('inputRow');
 
-    // Callback obligatorio que llama la API de YouTube cuando está lista
     function onYouTubeIframeAPIReady() {
       isApiReady = true;
-    }
-
-    // Extraer el ID de la playlist de un enlace o string
-    function parsePlaylistId(input) {
-      const match = input.match(/[&?]list=([^&]+)/);
-      return match ? match[1] : input.trim();
-    }
-
-    startBtn.addEventListener('click', () => {
-      const rawInput = playlistInput.value;
-      if (!rawInput) {
-        alert('Por favor ingresa un enlace o ID de playlist.');
-        return;
-      }
-
-      const playlistId = parsePlaylistId(rawInput);
-
-      if (!isApiReady) {
-        alert('Cargando API de YouTube, intenta de nuevo en un segundo.');
-        return;
-      }
-
-      startBtn.disabled = true;
-      startBtn.textContent = 'Cargando playlist...';
-
-      // Inicializar el reproductor cargando la playlist
       player = new YT.Player('player', {
         height: '200',
         width: '200',
-        playerVars: {
-          listType: 'playlist',
-          list: playlistId,
-          autoplay: 0,
-          controls: 0
-        },
-        events: {
-          'onReady': onPlayerReady,
-          'onError': (e) => {
-            alert('Error al cargar la playlist. Verifica que sea pública.');
-            startBtn.disabled = false;
-            startBtn.textContent = 'Cargar Juego';
-          }
-        }
+        playerVars: { autoplay: 0, controls: 0 }
       });
-    });
+    }
 
-    function onPlayerReady(event) {
-      // Obtener la lista de IDs de videos cargados
-      const playlistIds = player.getPlaylist();
+    function extractVideoId(url) {
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
+    }
 
-      if (!playlistIds || playlistIds.length === 0) {
-        alert('No se pudieron obtener canciones de esta playlist.');
-        startBtn.disabled = false;
-        startBtn.textContent = 'Cargar Juego';
+    startBtn.addEventListener('click', () => {
+      const lines = linksInput.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      
+      const parsedIds = [];
+      lines.forEach(line => {
+        const id = extractVideoId(line);
+        if (id) parsedIds.push(id);
+      });
+
+      if (parsedIds.length === 0) {
+        alert('Ingresa al menos un enlace válido de YouTube.');
         return;
       }
 
-      // Estructurar la playlist
-      playlist = playlistIds.map((id, index) => ({
+      playlist = parsedIds.map((id, i) => ({
         id: id,
-        title: `Canción ${index + 1}` // Nombre temporal mientras carga
+        title: `Video ${i + 1}`
       }));
 
-      // Iniciar el juego
       setupCard.style.display = 'none';
       gameArea.style.display = 'flex';
 
       renderTimeline();
       loadSong(0);
-    }
+    });
 
     function renderTimeline() {
       timelineBar.innerHTML = '';
@@ -447,34 +415,24 @@
       timeLabel.textContent = `${STAGES[currentAttempt]} segundos`;
     }
 
-    function populateSelect() {
-      songSelect.innerHTML = '<option value="">Selecciona una canción...</option>';
-      playlist.forEach(song => {
-        const opt = document.createElement('option');
-        opt.value = song.title;
-        opt.textContent = song.title;
-        songSelect.appendChild(opt);
-      });
-    }
-
     function loadSong(index) {
       currentSongIndex = index;
       currentAttempt = 0;
       isGameOver = false;
 
-      // Cargar la canción específica en el reproductor de YouTube
-      player.cueVideoById(playlist[currentSongIndex].id, 0);
+      if (player && player.cueVideoById) {
+        player.cueVideoById(playlist[currentSongIndex].id, 0);
+      }
 
-      // Intentar obtener el título real del video de YouTube
       setTimeout(() => {
-        const videoData = player.getVideoData();
-        if (videoData && videoData.title) {
-          playlist[currentSongIndex].title = videoData.title;
+        if (player && player.getVideoData) {
+          const data = player.getVideoData();
+          if (data && data.title) {
+            playlist[currentSongIndex].title = data.title;
+          }
         }
-        populateSelect();
-      }, 800);
+      }, 1000);
 
-      // Limpiar interfaz de intentos
       const boxes = guessesContainer.querySelectorAll('.guess-box');
       boxes.forEach(box => {
         box.textContent = '';
@@ -483,12 +441,14 @@
 
       inputRow.style.display = 'flex';
       nextBtn.style.display = 'none';
-      songSelect.value = '';
+      searchInput.value = '';
+      suggestionsList.style.display = 'none';
       updateTimelineUI();
     }
 
-    // Control de reproducción en milisegundos
     playBtn.addEventListener('click', () => {
+      if (!player || !player.playVideo) return;
+
       if (stopTimer) clearTimeout(stopTimer);
 
       player.seekTo(0, true);
@@ -503,6 +463,36 @@
       }, playDuration);
     });
 
+    // Búsqueda en tiempo real
+    searchInput.addEventListener('input', (e) => {
+      const val = e.target.value.toLowerCase().trim();
+      suggestionsList.innerHTML = '';
+
+      if (!val) {
+        suggestionsList.style.display = 'none';
+        return;
+      }
+
+      const matches = playlist.filter(song => song.title.toLowerCase().includes(val));
+
+      if (matches.length > 0) {
+        matches.forEach(song => {
+          const item = document.createElement('div');
+          item.className = 'suggestion-item';
+          item.textContent = song.title;
+          item.addEventListener('click', () => {
+            searchInput.value = song.title;
+            suggestionsList.style.display = 'none';
+            makeGuess(song.title);
+          });
+          suggestionsList.appendChild(item);
+        });
+        suggestionsList.style.display = 'block';
+      } else {
+        suggestionsList.style.display = 'none';
+      }
+    });
+
     function makeGuess(guessName) {
       if (isGameOver) return;
 
@@ -513,7 +503,7 @@
       if (!guessName) {
         currentBox.textContent = 'SKIP';
         currentBox.classList.add('skipped');
-      } else if (guessName === correctTitle) {
+      } else if (guessName.toLowerCase() === correctTitle.toLowerCase()) {
         currentBox.textContent = guessName;
         currentBox.classList.add('correct');
         endRound(true);
@@ -530,16 +520,10 @@
       } else {
         updateTimelineUI();
       }
-      songSelect.value = '';
+      searchInput.value = '';
     }
 
     skipBtn.addEventListener('click', () => makeGuess(''));
-
-    songSelect.addEventListener('change', (e) => {
-      if (e.target.value) {
-        makeGuess(e.target.value);
-      }
-    });
 
     function endRound(win) {
       isGameOver = true;
@@ -559,7 +543,7 @@
       if (currentSongIndex + 1 < playlist.length) {
         loadSong(currentSongIndex + 1);
       } else {
-        alert('¡Has completado todas las canciones de la playlist!');
+        alert('¡Has completado todas las canciones!');
         location.reload();
       }
     });
