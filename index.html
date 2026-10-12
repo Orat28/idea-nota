@@ -3,286 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>En una Nota - Adivina la Canción</title>
+  <title>EN UNA NOTA </title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    body {
-      background-color: #121212;
-      color: #ffffff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 600px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-    }
-
-    h1 {
-      font-size: 3rem;
-      font-weight: 800;
-      letter-spacing: -1px;
-    }
-
-    .setup-card {
-      background: #1e1e1e;
-      padding: 24px;
-      border-radius: 12px;
-      width: 100%;
-      text-align: center;
-      border: 1px solid #2a2a2a;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    textarea {
-      width: 100%;
-      height: 120px;
-      background: #282828;
-      border: 1px solid #333;
-      border-radius: 6px;
-      color: #fff;
-      padding: 12px;
-      font-size: 0.9rem;
-      outline: none;
-      resize: vertical;
-    }
-
-    textarea:focus {
-      border-color: #ff0000;
-    }
-
-    .btn-start {
-      height: 48px;
-      background-color: #ff0000;
-      color: #fff;
-      font-weight: bold;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background 0.2s ease;
-    }
-
-    .btn-start:hover {
-      background-color: #cc0000;
-    }
-
-    .game-area {
-      width: 100%;
-      display: none;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .guesses-container {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      width: 100%;
-    }
-
-    .guess-box {
-      width: 100%;
-      height: 48px;
-      border: 1px solid #333;
-      border-radius: 6px;
-      background-color: #181818;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      font-size: 0.95rem;
-      color: #ccc;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-
-    .guess-box.correct {
-      border-color: #1db954;
-      background-color: #11381e;
-      color: #1db954;
-    }
-
-    .guess-box.wrong {
-      border-color: #e91e63;
-      background-color: #38111e;
-      color: #e91e63;
-    }
-
-    .guess-box.skipped {
-      border-color: #555;
-      background-color: #222;
-      color: #888;
-    }
-
-    .timeline-indicator {
-      font-size: 0.9rem;
-      color: #aaa;
-      text-align: left;
-      width: 100%;
-    }
-
-    .timeline-bar {
-      display: flex;
-      width: 100%;
-      height: 16px;
-      background: #282828;
-      border-radius: 4px;
-      overflow: hidden;
-      gap: 2px;
-    }
-
-    .segment {
-      background: #3e3e3e;
-      height: 100%;
-      transition: background 0.2s;
-    }
-
-    .segment.unlocked {
-      background: #777;
-    }
-
-    .segment.active {
-      background: #ff0000;
-    }
-
-    .controls {
-      display: flex;
-      justify-content: center;
-      margin: 10px 0;
-    }
-
-    .play-btn {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      background-color: #ff0000;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.1s ease;
-    }
-
-    .play-btn:hover {
-      transform: scale(1.08);
-    }
-
-    .play-btn svg {
-      width: 28px;
-      height: 28px;
-      fill: #fff;
-      margin-left: 3px;
-    }
-
-    .search-row {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-      position: relative;
-    }
-
-    .input-wrapper {
-      position: relative;
-      flex: 1;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      height: 48px;
-      background: #282828;
-      border: 1px solid #333;
-      border-radius: 6px;
-      color: #fff;
-      padding: 0 12px;
-      font-size: 1rem;
-      outline: none;
-    }
-
-    .suggestions-list {
-      position: absolute;
-      bottom: 52px;
-      left: 0;
-      right: 0;
-      background: #282828;
-      border: 1px solid #444;
-      border-radius: 6px;
-      max-height: 180px;
-      overflow-y: auto;
-      display: none;
-      z-index: 10;
-    }
-
-    .suggestion-item {
-      padding: 12px;
-      cursor: pointer;
-      border-bottom: 1px solid #333;
-      font-size: 0.9rem;
-    }
-
-    .suggestion-item:hover {
-      background: #383838;
-    }
-
-    .btn-skip {
-      height: 48px;
-      padding: 0 24px;
-      background: #ffffff;
-      color: #000;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .next-btn {
-      width: 100%;
-      height: 48px;
-      background: #ff0000;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      font-size: 1rem;
-      cursor: pointer;
-      display: none;
-    }
-
-    #ytPlayerContainer {
-      position: absolute;
-      top: -9999px;
-      left: -9999px;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .container { width: 100%; max-width: 600px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+    h1 { font-size: 3rem; font-weight: 800; }
+    .setup-card { background: #1e1e1e; padding: 24px; border-radius: 12px; width: 100%; text-align: center; border: 1px solid #2a2a2a; display: flex; flex-direction: column; gap: 15px; }
+    textarea { width: 100%; height: 120px; background: #282828; border: 1px solid #333; border-radius: 6px; color: #fff; padding: 12px; font-size: 0.9rem; outline: none; }
+    .btn-start { height: 48px; background-color: #ff0000; color: #fff; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+    .game-area { width: 100%; display: none; flex-direction: column; gap: 15px; }
+    .guesses-container { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+    .guess-box { width: 100%; height: 48px; border: 1px solid #333; border-radius: 6px; background-color: #181818; display: flex; align-items: center; padding: 0 16px; font-size: 0.95rem; color: #ccc; }
+    .guess-box.correct { border-color: #1db954; background-color: #11381e; color: #1db954; }
+    .guess-box.wrong { border-color: #e91e63; background-color: #38111e; color: #e91e63; }
+    .guess-box.skipped { border-color: #555; background-color: #222; color: #888; }
+    .timeline-indicator { font-size: 1.1rem; color: #ffca28; font-weight: bold; text-align: center; width: 100%; }
+    .timeline-bar { display: flex; width: 100%; height: 16px; background: #282828; border-radius: 4px; overflow: hidden; gap: 2px; }
+    .segment { background: #3e3e3e; height: 100%; }
+    .segment.unlocked { background: #777; }
+    .segment.active { background: #ff0000; }
+    .controls { display: flex; justify-content: center; margin: 10px 0; }
+    .play-btn { width: 64px; height: 64px; border-radius: 50%; background-color: #ff0000; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .play-btn svg { width: 28px; height: 28px; fill: #fff; margin-left: 3px; }
+    .search-row { display: flex; gap: 10px; width: 100%; position: relative; }
+    .input-wrapper { position: relative; flex: 1; }
+    input[type="text"] { width: 100%; height: 48px; background: #282828; border: 1px solid #333; border-radius: 6px; color: #fff; padding: 0 12px; font-size: 1rem; outline: none; }
+    .suggestions-list { position: absolute; bottom: 52px; left: 0; right: 0; background: #282828; border: 1px solid #444; border-radius: 6px; max-height: 200px; overflow-y: auto; display: none; z-index: 10; }
+    .suggestion-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #333; font-size: 0.9rem; }
+    .btn-skip { height: 48px; padding: 0 24px; background: #ffffff; color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .next-btn { width: 100%; height: 48px; background: #ff0000; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; display: none; }
+    #ytPlayerContainer { position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>En una Nota</h1>
+    <h1>EN UNA NOTA</h1>
 
     <div class="setup-card" id="setupCard">
-      <h2>Ingresa tus Canciones</h2>
-      <p style="color: #aaa; font-size: 0.85rem;">Pega enlaces directos de YouTube (uno por línea):</p>
-      
+      <h2>1. Configurar Sala</h2>
+      <p style="color: #aaa; font-size: 0.85rem;">Código de Sala para los celulares:</p>
+      <input type="text" id="roomInput" value="1234" style="text-align: center; font-weight: bold; font-size: 1.2rem;" />
+
+      <h2>2. Ingresar Canciones</h2>
       <textarea id="linksInput" placeholder="https://www.youtube.com/watch?v=...&#10;https://youtu.be/..."></textarea>
 
       <button class="btn-start" id="startBtn">Iniciar Juego</button>
@@ -309,7 +73,7 @@
 
       <div class="search-row" id="inputRow">
         <div class="input-wrapper">
-          <input type="text" id="searchInput" placeholder="Escribe el nombre de la canción..." autocomplete="off" />
+          <input type="text" id="searchInput" placeholder="Escribe 'Artista - Canción'..." autocomplete="off" />
           <div class="suggestions-list" id="suggestionsList"></div>
         </div>
         <button class="btn-skip" id="skipBtn">Skip</button>
@@ -319,27 +83,37 @@
     </div>
   </div>
 
-  <div id="ytPlayerContainer">
-    <div id="player"></div>
-  </div>
+  <div id="ytPlayerContainer"><div id="player"></div></div>
 
+  <!-- SDKs de Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <script>
-    // Escala comenzando directamente en 0.5 segundos
-    const STAGES = [0.5, 1.0, 2.0, 4.0, 7.0, 10.0];
+    // ⚠️ REEMPLAZA ESTO CON TUS CREDENCIALES DE FIREBASE CONSOLE
+    const firebaseConfig = {
+      apiKey: "AIzaSy...",
+      authDomain: "tu-proyecto.firebaseapp.com",
+      databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com",
+      projectId: "tu-proyecto",
+      storageBucket: "tu-proyecto.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
 
-    let player = null;
-    let isApiReady = false;
-    let playlist = [];
-    let currentSongIndex = 0;
-    let currentAttempt = 0;
-    let isGameOver = false;
-    let stopTimer = null;
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let roomRef = null;
+
+    const STAGES = [0.5, 1.0, 2.0, 4.0, 7.0, 10.0];
+    let player = null, isApiReady = false, playlist = [];
+    let currentSongIndex = 0, currentAttempt = 0, isGameOver = false, stopTimer = null;
 
     const setupCard = document.getElementById('setupCard');
     const gameArea = document.getElementById('gameArea');
     const linksInput = document.getElementById('linksInput');
+    const roomInput = document.getElementById('roomInput');
     const startBtn = document.getElementById('startBtn');
     const searchInput = document.getElementById('searchInput');
     const suggestionsList = document.getElementById('suggestionsList');
@@ -353,41 +127,41 @@
 
     function onYouTubeIframeAPIReady() {
       isApiReady = true;
-      player = new YT.Player('player', {
-        height: '200',
-        width: '200',
-        playerVars: { autoplay: 0, controls: 0 }
-      });
+      player = new YT.Player('player', { height: '200', width: '200', playerVars: { autoplay: 0, controls: 0 } });
     }
 
     function extractVideoId(url) {
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(regExp);
+      const match = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
       return (match && match[2].length === 11) ? match[2] : null;
     }
 
     startBtn.addEventListener('click', () => {
+      const roomCode = roomInput.value.trim();
+      if (!roomCode) return alert('Ingresa un código de sala.');
+
       const lines = linksInput.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-      
-      const parsedIds = [];
-      lines.forEach(line => {
-        const id = extractVideoId(line);
-        if (id) parsedIds.push(id);
+      const parsedIds = lines.map(extractVideoId).filter(id => id !== null);
+
+      if (parsedIds.length === 0) return alert('Ingresa al menos un enlace válido de YouTube.');
+
+      playlist = parsedIds.map((id, i) => ({ id: id, title: `Canción ${i + 1}` }));
+
+      // Conectar a Firebase Sala
+      roomRef = db.ref(`rooms/${roomCode}`);
+      roomRef.set({ state: 'IDLE', first_buzzer: null });
+
+      // Escuchar Pulsadores de los Celulares
+      roomRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.state === 'BUZZED' && data.first_buzzer) {
+          if (player && player.pauseVideo) player.pauseVideo();
+          if (stopTimer) clearTimeout(stopTimer);
+          timeLabel.textContent = `🔔 ¡Tocó primero: ${data.first_buzzer.player_name}!`;
+        }
       });
-
-      if (parsedIds.length === 0) {
-        alert('Ingresa al menos un enlace válido de YouTube.');
-        return;
-      }
-
-      playlist = parsedIds.map((id, i) => ({
-        id: id,
-        title: `Canción ${i + 1}`
-      }));
 
       setupCard.style.display = 'none';
       gameArea.style.display = 'flex';
-
       renderTimeline();
       loadSong(0);
     });
@@ -399,8 +173,7 @@
         const seg = document.createElement('div');
         seg.className = 'segment';
         const prev = idx === 0 ? 0 : STAGES[idx - 1];
-        const width = ((duration - prev) / total) * 100;
-        seg.style.width = `${width}%`;
+        seg.style.width = `${((duration - prev) / total) * 100}%`;
         timelineBar.appendChild(seg);
       });
       updateTimelineUI();
@@ -421,81 +194,45 @@
       currentAttempt = 0;
       isGameOver = false;
 
-      if (player && player.cueVideoById) {
-        player.cueVideoById(playlist[currentSongIndex].id, 0);
-      }
+      if (roomRef) roomRef.set({ state: 'IDLE', first_buzzer: null });
+      if (player && player.cueVideoById) player.cueVideoById(playlist[currentSongIndex].id, 0);
 
       setTimeout(() => {
         if (player && player.getVideoData) {
           const data = player.getVideoData();
-          if (data && data.title) {
-            playlist[currentSongIndex].title = data.title;
-          }
+          if (data && data.title) playlist[currentSongIndex].title = cleanTitle(data.title);
         }
       }, 1000);
 
       const boxes = guessesContainer.querySelectorAll('.guess-box');
-      boxes.forEach(box => {
-        box.textContent = '';
-        box.className = 'guess-box';
-      });
+      boxes.forEach(box => { box.textContent = ''; box.className = 'guess-box'; });
 
       inputRow.style.display = 'flex';
       nextBtn.style.display = 'none';
       searchInput.value = '';
-      suggestionsList.style.display = 'none';
       updateTimelineUI();
+    }
+
+    function cleanTitle(title) {
+      return title.replace(/[\(\[\{].*?[\)\]\}]/g, '').replace(/official video|lyric video|hd|4k|mv/gi, '').trim();
     }
 
     playBtn.addEventListener('click', () => {
       if (!player || !player.playVideo) return;
-
       if (stopTimer) clearTimeout(stopTimer);
+
+      // Activar pulsadores en celulares
+      if (roomRef) roomRef.update({ state: 'PLAYING', first_buzzer: null });
 
       player.seekTo(0, true);
       player.playVideo();
 
-      const playDuration = isGameOver 
-        ? STAGES[STAGES.length - 1] * 1000 
-        : STAGES[currentAttempt] * 1000;
-
-      stopTimer = setTimeout(() => {
-        player.pauseVideo();
-      }, playDuration);
-    });
-
-    searchInput.addEventListener('input', (e) => {
-      const val = e.target.value.toLowerCase().trim();
-      suggestionsList.innerHTML = '';
-
-      if (!val) {
-        suggestionsList.style.display = 'none';
-        return;
-      }
-
-      const matches = playlist.filter(song => song.title.toLowerCase().includes(val));
-
-      if (matches.length > 0) {
-        matches.forEach(song => {
-          const item = document.createElement('div');
-          item.className = 'suggestion-item';
-          item.textContent = song.title;
-          item.addEventListener('click', () => {
-            searchInput.value = song.title;
-            suggestionsList.style.display = 'none';
-            makeGuess(song.title);
-          });
-          suggestionsList.appendChild(item);
-        });
-        suggestionsList.style.display = 'block';
-      } else {
-        suggestionsList.style.display = 'none';
-      }
+      const playDuration = isGameOver ? STAGES[STAGES.length - 1] * 1000 : STAGES[currentAttempt] * 1000;
+      stopTimer = setTimeout(() => { player.pauseVideo(); }, playDuration);
     });
 
     function makeGuess(guessName) {
       if (isGameOver) return;
-
       const boxes = guessesContainer.querySelectorAll('.guess-box');
       const currentBox = boxes[currentAttempt];
       const correctTitle = playlist[currentSongIndex].title;
@@ -514,12 +251,9 @@
       }
 
       currentAttempt++;
-
-      if (currentAttempt >= STAGES.length) {
-        endRound(false);
-      } else {
-        updateTimelineUI();
-      }
+      if (currentAttempt >= STAGES.length) endRound(false);
+      else updateTimelineUI();
+      
       searchInput.value = '';
     }
 
@@ -529,23 +263,14 @@
       isGameOver = true;
       inputRow.style.display = 'none';
       nextBtn.style.display = 'block';
-
       const songTitle = playlist[currentSongIndex].title;
-
-      if (!win) {
-        timeLabel.textContent = `Respuesta: ${songTitle}`;
-      } else {
-        timeLabel.textContent = `¡Correcto! Lo adivinaste en ${STAGES[currentAttempt]}s`;
-      }
+      timeLabel.textContent = win ? `¡Correcto! Era ${songTitle}` : `Respuesta: ${songTitle}`;
+      if (roomRef) roomRef.update({ state: 'IDLE' });
     }
 
     nextBtn.addEventListener('click', () => {
-      if (currentSongIndex + 1 < playlist.length) {
-        loadSong(currentSongIndex + 1);
-      } else {
-        alert('¡Has completado todas las canciones!');
-        location.reload();
-      }
+      if (currentSongIndex + 1 < playlist.length) loadSong(currentSongIndex + 1);
+      else alert('¡Has completado la playlist!');
     });
   </script>
 </body>
