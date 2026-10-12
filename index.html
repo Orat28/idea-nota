@@ -142,8 +142,14 @@
 
       if (parsedIds.length === 0) return alert('Ingresa al menos un enlace válido de YouTube.');
 
-      playlist = parsedIds.map((id, i) => ({ id: id, title: `Canción ${i + 1}` }));
+      // CÓDIGO NUEVO (CON SHUFFLE / ALEATORIO):
+playlist = parsedIds.map((id, i) => ({ id: id, title: `Canción ${i + 1}` }));
 
+// Algoritmo para mezclar la lista en orden aleatorio
+for (let i = playlist.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [playlist[i], playlist[j]] = [playlist[j], playlist[i]];
+}
       // Conectar a Firebase Sala
       roomRef = db.ref(`rooms/${roomCode}`);
       roomRef.set({ state: 'IDLE', first_buzzer: null });
