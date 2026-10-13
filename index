@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>En una nota - YouTube Playlist Edition</title>
+  <title>En una nota - Pantalla Principal (TV)</title>
   <style>
     * {
       box-sizing: border-box;
@@ -37,7 +37,6 @@
       letter-spacing: -1px;
     }
 
-    /* Pantalla de Inicio / Carga de Playlist */
     .setup-card {
       background: #1e1e1e;
       padding: 24px;
@@ -50,19 +49,7 @@
       gap: 15px;
     }
 
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      text-align: left;
-    }
-
-    label {
-      font-size: 0.9rem;
-      color: #aaa;
-    }
-
-    input[type="text"] {
+    textarea, input[type="text"] {
       width: 100%;
       height: 48px;
       background: #282828;
@@ -70,12 +57,14 @@
       border-radius: 6px;
       color: #fff;
       padding: 0 12px;
-      font-size: 0.95rem;
+      font-size: 1rem;
       outline: none;
     }
 
-    input[type="text"]:focus {
-      border-color: #ff0000;
+    textarea {
+      height: 120px;
+      padding: 12px;
+      resize: vertical;
     }
 
     .btn-start {
@@ -94,7 +83,6 @@
       background-color: #cc0000;
     }
 
-    /* Zona del Juego */
     .game-area {
       width: 100%;
       display: none;
@@ -144,9 +132,10 @@
     }
 
     .timeline-indicator {
-      font-size: 0.9rem;
-      color: #aaa;
-      text-align: left;
+      font-size: 1.1rem;
+      color: #ffca28;
+      font-weight: bold;
+      text-align: center;
       width: 100%;
     }
 
@@ -204,43 +193,6 @@
       margin-left: 3px;
     }
 
-    .search-row {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-    }
-
-    .select-wrapper {
-      flex: 1;
-    }
-
-    select {
-      width: 100%;
-      height: 48px;
-      background: #282828;
-      border: 1px solid #333;
-      border-radius: 6px;
-      color: #fff;
-      padding: 0 12px;
-      font-size: 1rem;
-      outline: none;
-    }
-
-    .btn-skip {
-      height: 48px;
-      padding: 0 24px;
-      background: #ffffff;
-      color: #000;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .btn-skip:hover {
-      background: #e0e0e0;
-    }
-
     .next-btn {
       width: 100%;
       height: 48px;
@@ -254,7 +206,6 @@
       display: none;
     }
 
-    /* Reproductor oculto de YouTube */
     #ytPlayerContainer {
       position: absolute;
       top: -9999px;
@@ -262,29 +213,25 @@
       width: 1px;
       height: 1px;
       opacity: 0;
-      pointer-events: none;
     }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>Songless</h1>
+    <h1>En una nota (TV)</h1>
 
-    <!-- Formulario de Inicio -->
     <div class="setup-card" id="setupCard">
-      <h2>Playlist de YouTube</h2>
-      <p style="color: #aaa; font-size: 0.9rem;">Ingresa el enlace o ID de una playlist pública de YouTube o YouTube Music.</p>
-      
-      <div class="input-group">
-        <label for="playlistUrl">URL o ID de la Playlist:</label>
-        <input type="text" id="playlistUrl" placeholder="https://www.youtube.com/playlist?list=PL..." />
-      </div>
+      <h2>1. Código de Sala</h2>
+      <input type="text" id="roomInput" value="1234" style="text-align: center; font-weight: bold;" />
 
-      <button class="btn-start" id="startBtn">Cargar Juego</button>
+      <h2>2. Ingresar Canciones</h2>
+      <p style="color: #aaa; font-size: 0.85rem;">Pega enlaces de YouTube (uno por línea):</p>
+      <textarea id="linksInput" placeholder="https://www.youtube.com/watch?v=...&#10;https://youtu.be/..."></textarea>
+
+      <button class="btn-start" id="startBtn">Iniciar Juego</button>
     </div>
 
-    <!-- Área Principal de Juego -->
     <div class="game-area" id="gameArea">
       <div class="guesses-container" id="guessesContainer">
         <div class="guess-box"></div>
@@ -295,7 +242,7 @@
         <div class="guess-box"></div>
       </div>
 
-      <div class="timeline-indicator" id="timeLabel">0.1 segundos</div>
+      <div class="timeline-indicator" id="timeLabel">0.5 segundos</div>
       <div class="timeline-bar" id="timelineBar"></div>
 
       <div class="controls">
@@ -304,124 +251,121 @@
         </button>
       </div>
 
-      <div class="search-row" id="inputRow">
-        <div class="select-wrapper">
-          <select id="songSelect">
-            <option value="">Selecciona una canción...</option>
-          </select>
-        </div>
-        <button class="btn-skip" id="skipBtn">Skip</button>
-      </div>
-
       <button class="next-btn" id="nextBtn">Siguiente Canción</button>
     </div>
   </div>
 
-  <!-- Contenedor iframe de YouTube oculto -->
-  <div id="ytPlayerContainer">
-    <div id="player"></div>
-  </div>
+  <div id="ytPlayerContainer"><div id="player"></div></div>
 
-  <!-- API de IFrame de YouTube -->
+  <!-- SDKs de Firebase y YouTube -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <script>
-    const STAGES = [0.1, 0.5, 1.0, 2.0, 4.0, 7.0];
+    const firebaseConfig = {
+      apiKey: "AIzaSyD3vC1zAURPHt2rCLmPF06xElC4KnpWpDU",
+      authDomain: "en-una.firebaseapp.com",
+      databaseURL: "https://en-una-default-rtdb.firebaseio.com",
+      projectId: "en-una",
+      storageBucket: "en-una.firebasestorage.app",
+      messagingSenderId: "862732139888",
+      appId: "1:862732139888:web:7f246b1bdd5f7f97b863b5",
+      measurementId: "G-41X7749JTT"
+    };
 
-    let player = null;
-    let isApiReady = false;
-    let playlist = [];
-    let currentSongIndex = 0;
-    let currentAttempt = 0;
-    let isGameOver = false;
-    let stopTimer = null;
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let roomRef = null;
+
+    const STAGES = [0.5, 1.0, 2.0, 4.0, 7.0, 10.0];
+    let player = null, isApiReady = false, playlist = [];
+    let currentSongIndex = 0, currentAttempt = 0, isGameOver = false, stopTimer = null;
 
     const setupCard = document.getElementById('setupCard');
     const gameArea = document.getElementById('gameArea');
-    const playlistInput = document.getElementById('playlistUrl');
+    const linksInput = document.getElementById('linksInput');
+    const roomInput = document.getElementById('roomInput');
     const startBtn = document.getElementById('startBtn');
-    const songSelect = document.getElementById('songSelect');
     const playBtn = document.getElementById('playBtn');
-    const skipBtn = document.getElementById('skipBtn');
     const nextBtn = document.getElementById('nextBtn');
     const guessesContainer = document.getElementById('guessesContainer');
     const timelineBar = document.getElementById('timelineBar');
     const timeLabel = document.getElementById('timeLabel');
-    const inputRow = document.getElementById('inputRow');
 
-    // Callback obligatorio que llama la API de YouTube cuando está lista
     function onYouTubeIframeAPIReady() {
       isApiReady = true;
+      player = new YT.Player('player', { height: '200', width: '200', playerVars: { autoplay: 0, controls: 0 } });
     }
 
-    // Extraer el ID de la playlist de un enlace o string
-    function parsePlaylistId(input) {
-      const match = input.match(/[&?]list=([^&]+)/);
-      return match ? match[1] : input.trim();
+    function extractVideoId(url) {
+      const match = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+      return (match && match[2].length === 11) ? match[2] : null;
     }
 
     startBtn.addEventListener('click', () => {
-      const rawInput = playlistInput.value;
-      if (!rawInput) {
-        alert('Por favor ingresa un enlace o ID de playlist.');
-        return;
+      const roomCode = roomInput.value.trim();
+      if (!roomCode) return alert('Ingresa un código de sala.');
+
+      const lines = linksInput.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      const parsedIds = lines.map(extractVideoId).filter(id => id !== null);
+
+      if (parsedIds.length === 0) return alert('Ingresa enlaces válidos de YouTube.');
+
+      playlist = parsedIds.map((id, i) => ({ id: id, title: `Canción ${i + 1}` }));
+
+      // 🔀 Mezclar la playlist aleatoriamente
+      for (let i = playlist.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [playlist[i], playlist[j]] = [playlist[j], playlist[i]];
       }
 
-      const playlistId = parsePlaylistId(rawInput);
+      roomRef = db.ref(`rooms/${roomCode}`);
+      roomRef.set({ state: 'IDLE', first_buzzer: null, submitted_guess: null, cmd: null });
 
-      if (!isApiReady) {
-        alert('Cargando API de YouTube, intenta de nuevo en un segundo.');
-        return;
-      }
+      // Escuchar eventos y comandos en tiempo real
+      roomRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
 
-      startBtn.disabled = true;
-      startBtn.textContent = 'Cargando playlist...';
+        // Comandos del Host desde el celular
+        if (data.cmd === 'LOAD_PLAYLIST' && data.playlist_urls) {
+          linksInput.value = data.playlist_urls;
+          roomRef.update({ cmd: null });
+          startBtn.click();
+          return;
+        }
 
-      // Inicializar el reproductor cargando la playlist
-      player = new YT.Player('player', {
-        height: '200',
-        width: '200',
-        playerVars: {
-          listType: 'playlist',
-          list: playlistId,
-          autoplay: 0,
-          controls: 0
-        },
-        events: {
-          'onReady': onPlayerReady,
-          'onError': (e) => {
-            alert('Error al cargar la playlist. Verifica que sea pública.');
-            startBtn.disabled = false;
-            startBtn.textContent = 'Cargar Juego';
-          }
+        if (data.cmd === 'PLAY') {
+          roomRef.update({ cmd: null });
+          playBtn.click();
+          return;
+        }
+
+        if (data.cmd === 'SKIP') {
+          roomRef.update({ cmd: null });
+          makeSkip();
+          return;
+        }
+
+        // Estado de Pulsador
+        if (data.state === 'BUZZED' && data.first_buzzer && !data.submitted_guess) {
+          if (player && player.pauseVideo) player.pauseVideo();
+          if (stopTimer) clearTimeout(stopTimer);
+          timeLabel.textContent = `✍️ Respondiendo: ${data.first_buzzer.player_name}...`;
+        }
+
+        // Respuesta enviada desde un celular
+        if (data.submitted_guess && data.state === 'BUZZED') {
+          processPlayerAnswer(data.submitted_guess.player_name, data.submitted_guess.text);
         }
       });
-    });
 
-    function onPlayerReady(event) {
-      // Obtener la lista de IDs de videos cargados
-      const playlistIds = player.getPlaylist();
-
-      if (!playlistIds || playlistIds.length === 0) {
-        alert('No se pudieron obtener canciones de esta playlist.');
-        startBtn.disabled = false;
-        startBtn.textContent = 'Cargar Juego';
-        return;
-      }
-
-      // Estructurar la playlist
-      playlist = playlistIds.map((id, index) => ({
-        id: id,
-        title: `Canción ${index + 1}` // Nombre temporal mientras carga
-      }));
-
-      // Iniciar el juego
       setupCard.style.display = 'none';
       gameArea.style.display = 'flex';
-
       renderTimeline();
       loadSong(0);
-    }
+    });
 
     function renderTimeline() {
       timelineBar.innerHTML = '';
@@ -430,8 +374,7 @@
         const seg = document.createElement('div');
         seg.className = 'segment';
         const prev = idx === 0 ? 0 : STAGES[idx - 1];
-        const width = ((duration - prev) / total) * 100;
-        seg.style.width = `${width}%`;
+        seg.style.width = `${((duration - prev) / total) * 100}%`;
         timelineBar.appendChild(seg);
       });
       updateTimelineUI();
@@ -447,121 +390,116 @@
       timeLabel.textContent = `${STAGES[currentAttempt]} segundos`;
     }
 
-    function populateSelect() {
-      songSelect.innerHTML = '<option value="">Selecciona una canción...</option>';
-      playlist.forEach(song => {
-        const opt = document.createElement('option');
-        opt.value = song.title;
-        opt.textContent = song.title;
-        songSelect.appendChild(opt);
-      });
-    }
-
     function loadSong(index) {
       currentSongIndex = index;
       currentAttempt = 0;
       isGameOver = false;
 
-      // Cargar la canción específica en el reproductor de YouTube
-      player.cueVideoById(playlist[currentSongIndex].id, 0);
+      if (roomRef) roomRef.set({ state: 'IDLE', first_buzzer: null, submitted_guess: null, cmd: null });
+      if (player && player.cueVideoById) player.cueVideoById(playlist[currentSongIndex].id, 0);
 
-      // Intentar obtener el título real del video de YouTube
       setTimeout(() => {
-        const videoData = player.getVideoData();
-        if (videoData && videoData.title) {
-          playlist[currentSongIndex].title = videoData.title;
+        if (player && player.getVideoData) {
+          const data = player.getVideoData();
+          if (data && data.title) playlist[currentSongIndex].title = cleanTitle(data.title);
         }
-        populateSelect();
-      }, 800);
+      }, 1000);
 
-      // Limpiar interfaz de intentos
       const boxes = guessesContainer.querySelectorAll('.guess-box');
-      boxes.forEach(box => {
-        box.textContent = '';
-        box.className = 'guess-box';
-      });
+      boxes.forEach(box => { box.textContent = ''; box.className = 'guess-box'; });
 
-      inputRow.style.display = 'flex';
       nextBtn.style.display = 'none';
-      songSelect.value = '';
       updateTimelineUI();
     }
 
-    // Control de reproducción en milisegundos
+    function cleanTitle(title) {
+      return title.replace(/[\(\[\{].*?[\)\]\}]/g, '').replace(/official video|lyric video|hd|4k|mv/gi, '').trim();
+    }
+
     playBtn.addEventListener('click', () => {
+      if (!player || !player.playVideo || isGameOver) return;
       if (stopTimer) clearTimeout(stopTimer);
+
+      if (roomRef) roomRef.update({ state: 'PLAYING', first_buzzer: null, submitted_guess: null });
 
       player.seekTo(0, true);
       player.playVideo();
 
-      const playDuration = isGameOver 
-        ? STAGES[STAGES.length - 1] * 1000 
-        : STAGES[currentAttempt] * 1000;
-
-      stopTimer = setTimeout(() => {
-        player.pauseVideo();
-      }, playDuration);
+      const playDuration = STAGES[currentAttempt] * 1000;
+      stopTimer = setTimeout(() => { player.pauseVideo(); }, playDuration);
     });
 
-    function makeGuess(guessName) {
-      if (isGameOver) return;
+    function checkMatch(userText, actualTitle) {
+      const norm = str => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, "").trim();
+      const u = norm(userText);
+      const a = norm(actualTitle);
 
+      if (u === a || a.includes(u)) return true;
+
+      const words = u.split(' ').filter(w => w.length > 2);
+      let matches = 0;
+      words.forEach(w => { if (a.includes(w)) matches++; });
+      return matches >= Math.min(2, words.length) && words.length > 0;
+    }
+
+    function processPlayerAnswer(playerName, userText) {
       const boxes = guessesContainer.querySelectorAll('.guess-box');
       const currentBox = boxes[currentAttempt];
       const correctTitle = playlist[currentSongIndex].title;
 
-      if (!guessName) {
-        currentBox.textContent = 'SKIP';
-        currentBox.classList.add('skipped');
-      } else if (guessName === correctTitle) {
-        currentBox.textContent = guessName;
+      const isCorrect = checkMatch(userText, correctTitle);
+
+      if (isCorrect) {
+        currentBox.textContent = `${playerName}: ${userText} (¡CORRECTO!)`;
         currentBox.classList.add('correct');
-        endRound(true);
-        return;
+        endRound(true, playerName);
       } else {
-        currentBox.textContent = guessName;
+        currentBox.textContent = `${playerName}: ${userText} (INCORRECTO)`;
         currentBox.classList.add('wrong');
+        currentAttempt++;
+
+        if (currentAttempt >= STAGES.length) {
+          endRound(false);
+        } else {
+          updateTimelineUI();
+          if (roomRef) roomRef.update({ state: 'IDLE', first_buzzer: null, submitted_guess: null });
+        }
       }
+    }
+
+    function makeSkip() {
+      if (isGameOver) return;
+      const boxes = guessesContainer.querySelectorAll('.guess-box');
+      const currentBox = boxes[currentAttempt];
+      currentBox.textContent = 'SKIP';
+      currentBox.classList.add('skipped');
 
       currentAttempt++;
-
       if (currentAttempt >= STAGES.length) {
         endRound(false);
       } else {
         updateTimelineUI();
+        if (roomRef) roomRef.update({ state: 'IDLE', first_buzzer: null, submitted_guess: null });
       }
-      songSelect.value = '';
     }
 
-    skipBtn.addEventListener('click', () => makeGuess(''));
-
-    songSelect.addEventListener('change', (e) => {
-      if (e.target.value) {
-        makeGuess(e.target.value);
-      }
-    });
-
-    function endRound(win) {
+    function endRound(win, winnerName) {
       isGameOver = true;
-      inputRow.style.display = 'none';
       nextBtn.style.display = 'block';
-
       const songTitle = playlist[currentSongIndex].title;
 
-      if (!win) {
-        timeLabel.textContent = `Respuesta: ${songTitle}`;
+      if (win) {
+        timeLabel.textContent = `🎉 ¡Ganó ${winnerName}! Era "${songTitle}"`;
       } else {
-        timeLabel.textContent = `¡Correcto! Lo adivinaste en ${STAGES[currentAttempt]}s`;
+        timeLabel.textContent = `❌ Se acabaron los intentos. Era "${songTitle}"`;
       }
+
+      if (roomRef) roomRef.update({ state: 'IDLE', first_buzzer: null, submitted_guess: null });
     }
 
     nextBtn.addEventListener('click', () => {
-      if (currentSongIndex + 1 < playlist.length) {
-        loadSong(currentSongIndex + 1);
-      } else {
-        alert('¡Has completado todas las canciones de la playlist!');
-        location.reload();
-      }
+      if (currentSongIndex + 1 < playlist.length) loadSong(currentSongIndex + 1);
+      else alert('¡Has completado toda la playlist!');
     });
   </script>
 </body>
