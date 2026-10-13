@@ -234,32 +234,37 @@
       return matches >= Math.min(2, words.length) && words.length > 0;
     }
 
-    function processPlayerAnswer(playerName, userText) {
-      const boxes = guessesContainer.querySelectorAll('.guess-box');
-      const currentBox = boxes[currentAttempt];
-      const correctTitle = playlist[currentSongIndex].title;
+function processPlayerAnswer(playerName, userText) {
+  const boxes = guessesContainer.querySelectorAll('.guess-box');
+  const currentBox = boxes[currentAttempt];
+  const correctTitle = playlist[currentSongIndex].title;
 
-      const isCorrect = checkMatch(userText, correctTitle);
+  const isCorrect = checkMatch(userText, correctTitle);
 
-      if (isCorrect) {
-        currentBox.textContent = `${playerName}: ${userText} (¡CORRECTO!)`;
-        currentBox.classList.add('correct');
-        endRound(true, playerName);
-      } else {
-        currentBox.textContent = `${playerName}: ${userText} (INCORRECTO)`;
-        currentBox.classList.add('wrong');
-        currentAttempt++;
+  if (isCorrect) {
+    currentBox.textContent = `${playerName}: ${userText} (¡CORRECTO!)`;
+    currentBox.classList.add('correct');
+    endRound(true, playerName);
+  } else {
+    currentBox.textContent = `${playerName}: ${userText} (INCORRECTO)`;
+    currentBox.classList.add('wrong');
+    currentAttempt++;
 
-        if (currentAttempt >= STAGES.length) {
-          endRound(false);
-        } else {
-          updateTimelineUI();
-          // Reactivar la sala para el siguiente intento
-          if (roomRef) roomRef.update({ state: 'IDLE', first_buzzer: null, submitted_guess: null });
-        }
+    if (currentAttempt >= STAGES.length) {
+      endRound(false);
+    } else {
+      updateTimelineUI();
+      // LIBERAR LA SALA PARA QUE EL CELULAR VUELVA AL ESTADO NORMAL
+      if (roomRef) {
+        roomRef.update({
+          state: 'IDLE',
+          first_buzzer: null,
+          submitted_guess: null
+        });
       }
     }
-
+  }
+}
     function endRound(win, winnerName) {
       isGameOver = true;
       nextBtn.style.display = 'block';
