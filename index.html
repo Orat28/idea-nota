@@ -345,6 +345,12 @@
         if (data.submitted_guess && data.state === 'BUZZED') {
           processPlayerAnswer(data.submitted_guess.player_name, data.submitted_guess.text);
         }
+        // Dentro del roomRef.on('value', ...) de tv.html:
+        if (data.cmd === 'NEXT_SONG') {
+          roomRef.update({ cmd: null });
+          nextBtn.click(); // Pasa a la siguiente canción automáticamente
+          return;
+        }
       });
     }
 
