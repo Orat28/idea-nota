@@ -11,7 +11,6 @@
     .layout { display: flex; width: 100%; max-width: 1100px; gap: 24px; align-items: flex-start; }
     .main-card { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 20px; background: #16161e; padding: 28px; border-radius: 16px; border: 1px solid #282838; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     
-    /* Marcador de Puntos en el lateral */
     .scoreboard-card { width: 300px; background: #16161e; padding: 20px; border-radius: 16px; border: 1px solid #282838; display: flex; flex-direction: column; gap: 15px; }
     .scoreboard-title { font-size: 1.2rem; font-weight: 800; color: #ffca28; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #282838; padding-bottom: 10px; }
     .leaderboard { display: flex; flex-direction: column; gap: 10px; list-style: none; }
@@ -55,7 +54,6 @@
 <body>
 
   <div class="layout">
-    <!-- MARCADOR DE PUNTAJES -->
     <div class="scoreboard-card">
       <div class="scoreboard-title">🏆 Tabla de Posiciones</div>
       <ul class="leaderboard" id="leaderboard">
@@ -63,7 +61,6 @@
       </ul>
     </div>
 
-    <!-- ÁREA PRINCIPAL -->
     <div class="main-card">
       <h1>OneNote</h1>
 
@@ -127,7 +124,7 @@
     let roomRef = null;
 
     const STAGES = [0.5, 1.0, 2.0, 4.0, 7.0, 10.0];
-    const POINTS = [5, 4, 3, 2, 1, 1]; // Puntos según el intento
+    const POINTS = [5, 4, 3, 2, 1, 1];
     let player = null, playlist = [];
     let currentSongIndex = 0, currentAttempt = 0, isGameOver = false, stopTimer = null;
     let scores = {};
@@ -235,7 +232,7 @@
 
     function renderLeaderboard() {
       leaderboard.innerHTML = '';
-      const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
+      const sorted = Object.entries(scores).sort((a,b) => Number(b[1]) - Number(a[1]));
       if (sorted.length === 0) {
         leaderboard.innerHTML = '<li style="color: #666; font-size: 0.85rem; text-align: center;">Sin puntos aún</li>';
         return;
@@ -332,8 +329,10 @@
       const isCorrect = checkMatch(userText, correctTitle);
 
       if (isCorrect) {
-        const earned = number(POINTS[currentAttempt];
-        scores[playerName] = number((scores[playerName] || 0) + earned;
+        const earned = Number(POINTS[currentAttempt]);
+        const currentScore = Number(scores[playerName] || 0);
+        scores[playerName] = currentScore + earned;
+        
         if (roomRef) roomRef.child('scores').set(scores);
 
         currentBox.textContent = `${playerName}: ${userText} (+${earned} pts)`;
@@ -380,7 +379,6 @@
         timeLabel.textContent = `❌ Se acabaron los intentos. Era "${songTitle}"`;
       }
 
-      // Reproducir la canción completa al terminar la ronda
       if (player && player.playVideo) {
         player.seekTo(0, true);
         player.playVideo();
