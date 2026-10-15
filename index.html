@@ -332,8 +332,8 @@
       const isCorrect = checkMatch(userText, correctTitle);
 
       if (isCorrect) {
-        const earned = POINTS[currentAttempt];
-        scores[playerName] = (scores[playerName] || 0) + earned;
+        const earned = number(POINTS[currentAttempt];
+        scores[playerName] = number((scores[playerName] || 0) + earned;
         if (roomRef) roomRef.child('scores').set(scores);
 
         currentBox.textContent = `${playerName}: ${userText} (+${earned} pts)`;
