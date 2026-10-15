@@ -12,7 +12,10 @@
     .main-card { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 20px; background: #16161e; padding: 28px; border-radius: 16px; border: 1px solid #282838; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     
     .scoreboard-card { width: 300px; background: #16161e; padding: 20px; border-radius: 16px; border: 1px solid #282838; display: flex; flex-direction: column; gap: 15px; }
-    .scoreboard-title { font-size: 1.2rem; font-weight: 800; color: #ffca28; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #282838; padding-bottom: 10px; }
+    .scoreboard-title { font-size: 1.2rem; font-weight: 800; color: #ffca28; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #282838; padding-bottom: 10px; }
+    .btn-reset-scores { background: transparent; border: 1px solid #ff0055; color: #ff0055; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; }
+    .btn-reset-scores:hover { background: #ff0055; color: #fff; }
+    
     .leaderboard { display: flex; flex-direction: column; gap: 10px; list-style: none; }
     .player-rank { display: flex; justify-content: space-between; align-items: center; background: #1f1f2e; padding: 10px 14px; border-radius: 8px; border-left: 4px solid #1db954; font-weight: bold; }
     .player-rank.top { border-left-color: #ffca28; background: #2a281e; }
@@ -54,13 +57,18 @@
 <body>
 
   <div class="layout">
+    <!-- MARCADOR DE PUNTAJES -->
     <div class="scoreboard-card">
-      <div class="scoreboard-title">🏆 Tabla de Posiciones</div>
+      <div class="scoreboard-title">
+        <span>🏆 Posiciones</span>
+        <button class="btn-reset-scores" id="resetScoresBtn">Reset Puntos</button>
+      </div>
       <ul class="leaderboard" id="leaderboard">
         <li style="color: #666; font-size: 0.85rem; text-align: center;">Esperando jugadores...</li>
       </ul>
     </div>
 
+    <!-- ÁREA PRINCIPAL -->
     <div class="main-card">
       <h1>OneNote</h1>
 
@@ -128,6 +136,7 @@
     let player = null, playlist = [];
     let currentSongIndex = 0, currentAttempt = 0, isGameOver = false, stopTimer = null;
     let scores = {};
+    let isProcessingAnswer = false; // Bandera para evitar que sume dos veces en milisegundos
 
     const setupCard = document.getElementById('setupCard');
     const gameArea = document.getElementById('gameArea');
@@ -141,6 +150,7 @@
     const timeLabel = document.getElementById('timeLabel');
     const volSlider = document.getElementById('volSlider');
     const leaderboard = document.getElementById('leaderboard');
+    const resetScoresBtn = document.getElementById('resetScoresBtn');
 
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('player', { height: '200', width: '200', playerVars: { autoplay: 0, controls: 0 } });
@@ -160,7 +170,14 @@
         if (!data) return;
 
         if (data.scores) {
-          scores = data.scores;
+          scores = {};
+          // FORZAR CADA VALOR A NÚMERO
+          Object.keys(data.scores).forEach(pName => {
+            scores[pName] = parseInt(data.scores[pName], 10) || 0;
+          });
+          renderLeaderboard();
+        } else {
+          scores = {};
           renderLeaderboard();
         }
 
@@ -194,13 +211,23 @@
           timeLabel.textContent = `✍️ Respondiendo: ${data.first_buzzer.player_name}...`;
         }
 
-        if (data.submitted_guess && data.state === 'BUZZED') {
+        // PROCESAR RESPUESTA UNA SOLA VEZ
+        if (data.submitted_guess && data.state === 'BUZZED' && !isProcessingAnswer) {
+          isProcessingAnswer = true;
           processPlayerAnswer(data.submitted_guess.player_name, data.submitted_guess.text);
         }
       });
     }
 
     initRoomListener();
+
+    resetScoresBtn.addEventListener('click', () => {
+      if (confirm('¿Quieres reiniciar la tabla de posiciones a 0?')) {
+        scores = {};
+        if (roomRef) roomRef.child('scores').remove();
+        renderLeaderboard();
+      }
+    });
 
     volSlider.addEventListener('input', (e) => {
       if (player && player.setVolume) player.setVolume(e.target.value);
@@ -232,7 +259,7 @@
 
     function renderLeaderboard() {
       leaderboard.innerHTML = '';
-      const sorted = Object.entries(scores).sort((a,b) => Number(b[1]) - Number(a[1]));
+      const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
       if (sorted.length === 0) {
         leaderboard.innerHTML = '<li style="color: #666; font-size: 0.85rem; text-align: center;">Sin puntos aún</li>';
         return;
@@ -272,6 +299,7 @@
       currentSongIndex = index;
       currentAttempt = 0;
       isGameOver = false;
+      isProcessingAnswer = false;
 
       if (roomRef) roomRef.update({ state: 'IDLE', first_buzzer: null, submitted_guess: null, cmd: null });
       if (player && player.cueVideoById) player.cueVideoById(playlist[currentSongIndex].id, 0);
@@ -329,11 +357,14 @@
       const isCorrect = checkMatch(userText, correctTitle);
 
       if (isCorrect) {
-        const earned = Number(POINTS[currentAttempt]);
-        const currentScore = Number(scores[playerName] || 0);
-        scores[playerName] = currentScore + earned;
+        const earned = POINTS[currentAttempt];
+        const prevScore = parseInt(scores[playerName], 10) || 0;
+        const newScore = prevScore + earned;
+
+        scores[playerName] = newScore;
         
-        if (roomRef) roomRef.child('scores').set(scores);
+        // Guardar de forma explícita en Firebase
+        if (roomRef) roomRef.child('scores').child(playerName).set(newScore);
 
         currentBox.textContent = `${playerName}: ${userText} (+${earned} pts)`;
         currentBox.classList.add('correct');
@@ -347,6 +378,7 @@
           endRound(false);
         } else {
           updateTimelineUI();
+          isProcessingAnswer = false;
           if (roomRef) roomRef.update({ state: 'IDLE', first_buzzer: null, submitted_guess: null });
         }
       }
@@ -364,12 +396,14 @@
         endRound(false);
       } else {
         updateTimelineUI();
+        isProcessingAnswer = false;
         if (roomRef) roomRef.update({ state: 'IDLE', first_buzzer: null, submitted_guess: null });
       }
     }
 
     function endRound(win, winnerName) {
       isGameOver = true;
+      isProcessingAnswer = false;
       nextBtn.style.display = 'block';
       const songTitle = playlist[currentSongIndex].title;
 
