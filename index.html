@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>OneNote - Pantalla Principal (TV)</title>
+  <title>No Me Sale el Nombre - TV</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
     body { background: #0f0f13; color: #ffffff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; overflow-x: hidden; }
@@ -21,7 +21,7 @@
     .player-rank.top { border-left-color: #ffca28; background: #2a281e; }
     .player-score { background: #282838; padding: 4px 10px; border-radius: 12px; color: #1db954; font-size: 0.9rem; }
 
-    h1 { font-size: 2.8rem; font-weight: 900; background: linear-gradient(135deg, #ff0055, #ff5500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    h1 { font-size: 2.5rem; font-weight: 900; background: linear-gradient(135deg, #ff0055, #ff5500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
 
     .setup-card { width: 100%; text-align: center; display: flex; flex-direction: column; gap: 15px; }
     textarea, input[type="text"] { width: 100%; height: 48px; background: #222230; border: 1px solid #333348; border-radius: 8px; color: #fff; padding: 0 12px; font-size: 1rem; outline: none; }
@@ -70,7 +70,7 @@
 
     <!-- ÁREA PRINCIPAL -->
     <div class="main-card">
-      <h1>OneNote</h1>
+      <h1>No Me Sale el Nombre</h1>
 
       <div class="setup-card" id="setupCard">
         <h2>Código de Sala</h2>
@@ -136,7 +136,7 @@
     let player = null, playlist = [];
     let currentSongIndex = 0, currentAttempt = 0, isGameOver = false, stopTimer = null;
     let scores = {};
-    let isProcessingAnswer = false; // Bandera para evitar que sume dos veces en milisegundos
+    let isProcessingAnswer = false;
 
     const setupCard = document.getElementById('setupCard');
     const gameArea = document.getElementById('gameArea');
@@ -161,8 +161,9 @@
       return (match && match[2].length === 11) ? match[2] : null;
     }
 
-    function initRoomListener() {
-      const roomCode = roomInput.value.trim() || '1234';
+    function connectToRoom(roomCode) {
+      if (roomRef) roomRef.off();
+
       roomRef = db.ref(`rooms/${roomCode}`);
 
       roomRef.on('value', (snapshot) => {
@@ -171,7 +172,6 @@
 
         if (data.scores) {
           scores = {};
-          // FORZAR CADA VALOR A NÚMERO
           Object.keys(data.scores).forEach(pName => {
             scores[pName] = parseInt(data.scores[pName], 10) || 0;
           });
@@ -211,15 +211,12 @@
           timeLabel.textContent = `✍️ Respondiendo: ${data.first_buzzer.player_name}...`;
         }
 
-        // PROCESAR RESPUESTA UNA SOLA VEZ
         if (data.submitted_guess && data.state === 'BUZZED' && !isProcessingAnswer) {
           isProcessingAnswer = true;
           processPlayerAnswer(data.submitted_guess.player_name, data.submitted_guess.text);
         }
       });
     }
-
-    initRoomListener();
 
     resetScoresBtn.addEventListener('click', () => {
       if (confirm('¿Quieres reiniciar la tabla de posiciones a 0?')) {
@@ -249,7 +246,8 @@
         [playlist[i], playlist[j]] = [playlist[j], playlist[i]];
       }
 
-      if (roomRef) roomRef.update({ state: 'IDLE', first_buzzer: null, submitted_guess: null, cmd: null });
+      connectToRoom(roomCode);
+      roomRef.update({ state: 'IDLE', first_buzzer: null, submitted_guess: null, cmd: null });
 
       setupCard.style.display = 'none';
       gameArea.style.display = 'flex';
@@ -363,7 +361,6 @@
 
         scores[playerName] = newScore;
         
-        // Guardar de forma explícita en Firebase
         if (roomRef) roomRef.child('scores').child(playerName).set(newScore);
 
         currentBox.textContent = `${playerName}: ${userText} (+${earned} pts)`;
